@@ -9,6 +9,12 @@ Para  la captura de datos es necesario realizar el siguiente procedimiento:
 5. Enviamos y recibimos recursos al topic , en una shell generamos el productor que recibirá los datos en stream y los enviará al consumidor
 6. Tendrémos generada un Postgres donde se guardará la información procesada y recibida de stream layer y se guardarán las tablas de las consultas realizadas en el batch.
 
+# BATH LAYER
+--------------
+Teniendo en cuenta que la mayoría de métodos que se implementarán en esta y que son compartidos con el Stream Layer, nos ocuparemos de explicar lo que sea diferente, y específico para este layer.
+
+En esta capa ya no se consumen los datos en streaming, aquí se leen datos  del strorage que se han generarán de json a en formato parquet, y guardados en un bucket o archivos temporales, aquí la lectura ya no está hecha en streamming
+
 # STREAM LAYER 
  --------------
  Debemos tener previamente una interfaz que contenga los métodos que generaran los jobs.
@@ -20,18 +26,19 @@ Para  la captura de datos es necesario realizar el siguiente procedimiento:
  6. con el jdbc se genera la conexion con  la base de datos, tener en cuenta la contraseña y usuario que son necesarios
  7. De ser necesario la tabla generada con la información puede ser enriquesida con otras tablas, para eso se debe realizar un join de las tablas identificando cada una y borrando las columnas iguales, en este caso no era completamente necesario pero decidí hacerlo para mostrar la información que se solicitaba agrupada de forma diferente en cada consulta 
  8. en este proyecto han solicitado :
-#  - Suma de los bytes de cada usuario,
+#  - Suma de los bytes de cada usuario
+
 se usó  la función suma, con un waithmark para los mensajes atrasados, agrupamos por id de usuario, con withcolumn generamos la columna tipo literal que será el nombre de la función Usuario_bytes_total , aquí decidí usar el name para hacer uso de la tabla de la información de los usuarios, para que apareciera el nombre en lugar de un numero 
   - 
 ![image](https://user-images.githubusercontent.com/86910759/155903230-3eb444e1-bda2-4c78-b327-6a8db5bd9345.png)
 
  
-# para los bytes totales por antena, 
+# Para los bytes totales por antena:
 seleccionamos los datos que necesitamos para obtener el total, que son: anntena_id, timestamp y los bytes, los agrupamos por antenna_id que es el valor que requerimos , hacemos una agregación con la suma de los bytes transmitidos por la antena y  hacemos una ventana con timestamp con una duración de 90 segundos para obtenr resultados ,seleccionoamos los datos que llevaremos a la tabla de byts, y obtendremos la siguiente tabla
  
  ![image](https://user-images.githubusercontent.com/86910759/155903221-ee2190e4-a3d0-4d17-858b-3789e4544744.png)
  
-# para el total de bytes de la aplicación
+# Para el total de bytes de la aplicación:
 
 ![image](https://user-images.githubusercontent.com/86910759/155903265-122c7338-da95-4e7d-a157-39e7d4364960.png)
 
