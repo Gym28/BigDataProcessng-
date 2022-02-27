@@ -20,7 +20,38 @@ Para  la captura de datos es necesario realizar el siguiente procedimiento:
  6. con el jdbc se genera la conexion con  la base de datos, tener en cuenta la contraseña y usuario que son necesarios
  7. De ser necesario la tabla generada con la información puede ser enriquesida con otras tablas, para eso se debe realizar un join de las tablas identificando cada una y borrando las columnas iguales, en este caso no era completamente necesario pero decidí hacerlo para mostrar la información que se solicitaba agrupada de forma diferente en cada consulta 
  8. en este proyecto han solicitado :
-  - Suma de los bytes de cada usuario, se usó  la función suma, con un waithmark para los mensajes atrasados, agrupamos por id de usuario, con withcolumn generamos la columna tipo literal que será el nombre de la función Usuario_bytes_total , aquí decidí usar el name para hacer uso de la tabla de la información de los usuarios, para que apareciera el nombre en lugar de un numero 
+#  - Suma de los bytes de cada usuario,
+se usó  la función suma, con un waithmark para los mensajes atrasados, agrupamos por id de usuario, con withcolumn generamos la columna tipo literal que será el nombre de la función Usuario_bytes_total , aquí decidí usar el name para hacer uso de la tabla de la información de los usuarios, para que apareciera el nombre en lugar de un numero 
   - 
- ![image](https://user-images.githubusercontent.com/86910759/155903164-6ca75f85-edd0-4cbe-9d68-8d9d638b6a75.png)
+![image](https://user-images.githubusercontent.com/86910759/155903230-3eb444e1-bda2-4c78-b327-6a8db5bd9345.png)
+
+ 
+# para los bytes totales por antena, 
+seleccionamos los datos que necesitamos para obtener el total, que son: anntena_id, timestamp y los bytes, los agrupamos por antenna_id que es el valor que requerimos , hacemos una agregación con la suma de los bytes transmitidos por la antena y  hacemos una ventana con timestamp con una duración de 90 segundos para obtenr resultados ,seleccionoamos los datos que llevaremos a la tabla de byts, y obtendremos la siguiente tabla
+ 
+ ![image](https://user-images.githubusercontent.com/86910759/155903221-ee2190e4-a3d0-4d17-858b-3789e4544744.png)
+ 
+# para el total de bytes de la aplicación
+
+![image](https://user-images.githubusercontent.com/86910759/155903265-122c7338-da95-4e7d-a157-39e7d4364960.png)
+
+ 
+el siguiente paso es guardar en postgres, lo importante es que la estructura esté adaptada a la tabla bytes donde vamos a guardar los datos totales de los bytes, para ello debemos hacer un futuro, para hacer pequeñas escrituras por cada dataset que va llegando,para eso hacemos un foreachBatch, escribimos en stream, para que pueda guardar debemos conectarnos al postgres con jdbc , estableciendo el modo Append para  agregar los datos a la tabla  y no la sobreescriba 
+
+
+para guardar por año mes día y hora sería otro futuro.  
+
+Debemos establecer 3 futuros para cada una de las métricas de bytes de esta forma se guardarán en el postgres y un 4 futuro es para que se escriban los datos en un fichero temporal
+
+Debemos hacer un Await de resultado de los futuros con la lista de futuros y el tiempo.inf
+
+la comprobación del futuro de Antena_bytes_total y podemos ver que están cargando todos los datos de usuario, de antena y de aplicación
+
+![image](https://user-images.githubusercontent.com/86910759/155903296-d8593d36-310e-4215-af6d-e667198d82af.png)
+
+![image](https://user-images.githubusercontent.com/86910759/155903305-e48b3bc3-1c6f-4edf-acdb-e4dddeea058c.png)
+
+
+ 
+
 
