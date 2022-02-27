@@ -7,13 +7,29 @@ Para  la captura de datos es necesario realizar el siguiente procedimiento:
 3. Levantamos el brocker de Kafka en segundo plano (Daemon)
 4. creamos los topics para kafka que se consumiran, también el número de particiones y el factor de replicación
 5. Enviamos y recibimos recursos al topic , en una shell generamos el productor que recibirá los datos en stream y los enviará al consumidor
-6. Tendrémos generada un Postgres donde se guardará la información procesada y recibida de stream layer y se guardarán las tablas de las consultas realizadas en el batch.
+6. Tendrémos generada un Postgres donde se guardará la información procesada y recibida de stream layer y se guardarán las tablas de las consultas realizadas en  batch.
 
 # BATH LAYER
 --------------
 Teniendo en cuenta que la mayoría de métodos que se implementarán en esta y que son compartidos con el Stream Layer, nos ocuparemos de explicar lo que sea diferente, y específico para este layer.
 
 En esta capa ya no se consumen los datos en streaming, aquí se leen datos  del strorage que se han generarán de json a en formato parquet, y guardados en un bucket o archivos temporales, aquí la lectura ya no está hecha en streamming
+
+# Total de bytes recibidos por antena por hora.
+el window usado para la agrupación se fija en una hora y se elimina el witWatermark porque ya no es necesaria, de igual forma con la agregación se hace la suma y se adiciona la columna valor 
+
+# Total de bytes transmitidos por mail de usuario.
+Se hace la agrupación por mail del usuario y se guarda la infomación en la tabla correspondiente 
+
+# Total de bytes transmitidos por aplicación.
+Aquí se hace la agrupación por aplicación.
+
+finalmente se seleccionan las columnas que irán en la tabla bytes_by_hour
+
+Debe prepararse la conexión con el postgres con el mismo metodo usado en el Stream Layer.
+
+
+
 
 # STREAM LAYER 
  --------------
@@ -26,7 +42,7 @@ En esta capa ya no se consumen los datos en streaming, aquí se leen datos  del 
  6. con el jdbc se genera la conexion con  la base de datos, tener en cuenta la contraseña y usuario que son necesarios
  7. De ser necesario la tabla generada con la información puede ser enriquesida con otras tablas, para eso se debe realizar un join de las tablas identificando cada una y borrando las columnas iguales, en este caso no era completamente necesario pero decidí hacerlo para mostrar la información que se solicitaba agrupada de forma diferente en cada consulta 
  8. en este proyecto han solicitado :
-#  - Suma de los bytes de cada usuario
+#  - Suma de los bytes de cada usuario.
 
 se usó  la función suma, con un waithmark para los mensajes atrasados, agrupamos por id de usuario, con withcolumn generamos la columna tipo literal que será el nombre de la función Usuario_bytes_total , aquí decidí usar el name para hacer uso de la tabla de la información de los usuarios, para que apareciera el nombre en lugar de un numero 
   - 
