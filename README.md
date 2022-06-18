@@ -9,7 +9,7 @@ Para  la captura de datos es necesario realizar el siguiente procedimiento:
 5. Enviamos y recibimos recursos al topic , en una shell generamos el productor que recibirá los datos en stream y los enviará al consumidor
 6. Tendrémos generada un Postgres donde se guardará la información procesada y recibida de stream layer y se guardarán las tablas de las consultas realizadas en  batch.
 
-# BATH LAYER
+# BATCH LAYER
 --------------
 Teniendo en cuenta que la mayoría de métodos que se implementarán en esta y que son compartidos con el Stream Layer, nos ocuparemos de explicar lo que sea diferente, y específico para este layer.
 
