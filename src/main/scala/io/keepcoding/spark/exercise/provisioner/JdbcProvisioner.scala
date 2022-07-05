@@ -42,6 +42,8 @@ object JdbcProvisioner {
       println("Creando la tabla bytesByHour (date TIMESTAMP, id TEXT, value BIGINT, type TEXT )")
       statement.execute("CREATE TABLE IF NOT EXISTS bytesByHour(timestamp TIMESTAMP, id TEXT, value BIGINT, type TEXT)")
 
+      println("Creando la tabla quotalimit (email TEXT, usage BIGINT, quota BIGINT, timestamp TIMESTAMP)")
+      statement.execute("CREATE TABLE IF NOT EXISTS quotalimit(email TEXT, usage BIGINT, quota BIGINT, timestamp TIMESTAMP)")
 
       println("Dando de alta la información de usuarios")
 

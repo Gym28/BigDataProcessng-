@@ -4,6 +4,8 @@ import org.apache.spark.sql.functions.{lit, sum, window}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import java.time.OffsetDateTime
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object BatchJobImpl extends BatchJob {
   override val spark: SparkSession =
@@ -26,7 +28,7 @@ object BatchJobImpl extends BatchJob {
         $"hour" === lit(filterDate.getHour))
   }
 
-  override def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
+  override def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame = {
     spark
       .read
       .format("jdbc")
@@ -49,13 +51,12 @@ object BatchJobImpl extends BatchJob {
   override def totalBytesAntena(dataFrame: DataFrame): DataFrame = {
     dataFrame
 
-      .select($"timestamp", $"id", $"value", $"type")
-      .where($"type" === lit("antena_by_total"))
+      .select($"timestamp", $"id",  $"bytes")
       .groupBy($"id", window($"timestamp", "1 hour"))
       .agg(
-        sum($"bytes").as ("value")
+        sum($"bytes").as ("sum_bytes_antenna")
       ).withColumn("type", lit("Antena_bytes_total"))
-      .select($"id", $"window.start".as("date") , $"value", $"type")
+      .select($"id", $"window.start".as("TIMESTAMP"), $"sum_bytes_antenna".as("value"), $"type")
 
 
   }
@@ -69,7 +70,7 @@ object BatchJobImpl extends BatchJob {
         sum($"bytes").as ("value")
 
       ).withColumn("type", lit("user_bytes_total"))
-      .select($"email".as("id"), $"window.start".as("date") , $"value", $"type")
+      .select($"email".as("id"), $"window.start".as("TIMESTAMP") , $"value", $"type")
 
   }
 
@@ -81,10 +82,16 @@ object BatchJobImpl extends BatchJob {
       .agg(
         sum($"bytes").as ("value")
       ).withColumn("type", lit("app_bytes_total"))
-      .select($"app".as("id"), $"window.start".as("date") , $"value", $"type")
+      .select($"app".as("id"), $"window.start".as("TIMESTAMP") , $"value", $"type")
   }
 
-  override def quotapass(dataFrame: DataFrame): DataFrame = ???
+  override def quotapass(dataFrame: DataFrame): DataFrame =   dataFrame
+    .select($"timestamp", $"email", $"bytes", $"quota")
+    .groupBy($"email", $"quota", window($"timestamp", "1 hour"))
+    .agg(sum("bytes").as("user_bytes_total")
+       )
+    .select($"email", $"user_bytes_total".as("usage"), $"quota", $"window.start".as("timestamp"))
+    .where($"user_bytes_total" > $"quota")
 
   override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Unit = {
     dataFrame
@@ -98,11 +105,17 @@ object BatchJobImpl extends BatchJob {
       .save()
   }
 
-  override def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Unit = ???
-
+  override def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Unit ={
+    dataFrame
+      .write
+      .partitionBy("year", "month", "day", "hour")
+      .format("parquet")
+      .mode(SaveMode.Overwrite)
+      .save(s"${storageRootPath}/historical")
+  }
   def main (args: Array[String]): Unit ={
-    var rawDF= readFromStorage("/tmp/spark-data", OffsetDateTime.parse("2022-02-27T22:00:00Z"))
-    val metadataDF = readAntennaMetadata( s"jdbc:postgresql://localhost:5432/postgres",
+    var rawDF= readFromStorage("/tmp/spark-deviceH", OffsetDateTime.parse("2022-07-04T20:00:00Z"))
+    val metadataDF = readUserMetadata( s"jdbc:postgresql://localhost:5432/postgres",
       "user_metadata",
       "postgres",
       "mysecretpassword" )
@@ -112,9 +125,9 @@ object BatchJobImpl extends BatchJob {
       s"jdbc:postgresql://localhost:5432/postgres",
       "bytesByHour",
       "postgres",
-      "mysecretpassword"
+      "mysecretpassword")
 
-    )
+
     writeToJdbc(totalBytesAntena(enrichDF),
       s"jdbc:postgresql://localhost:5432/postgres",
       "bytesByHour",
@@ -126,6 +139,13 @@ object BatchJobImpl extends BatchJob {
       "bytesByHour",
       "postgres",
       "mysecretpassword")
+
+    writeToJdbc(quotapass(enrichDF),
+      s"jdbc:postgresql://localhost:5432/postgres",
+      "quotalimit",
+      "postgres",
+      "mysecretpassword")
+
 
   }
 

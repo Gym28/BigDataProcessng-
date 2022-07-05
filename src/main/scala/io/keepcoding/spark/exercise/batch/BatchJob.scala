@@ -1,12 +1,15 @@
 package io.keepcoding.spark.exercise.batch
 
+import io.keepcoding.spark.exercise.batch.BatchJobImpl.writeToJdbc
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
-case class AntennaMessage(year: Int, month: Int, day: Int, hour: Int, timestamp: Timestamp, id: String, metric: String, value: Long)
+case class MobileDevicesMessage(year: Int, month: Int, day: Int, hour: Int, timestamp: Timestamp, id: String, antenna_id: String, bytes: Long)
 
 trait BatchJob {
 
@@ -14,7 +17,7 @@ trait BatchJob {
 
   def readFromStorage(storagePath: String, filterDate: OffsetDateTime): DataFrame
 
-  def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
+  def readUserMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
 
   def enrichDeviceWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
 
@@ -31,22 +34,23 @@ trait BatchJob {
   def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Unit
 
   def run(args: Array[String]): Unit = {
-    val Array(filterDate, storagePath, jdbcUri, jdbcMetadataTable, aggJdbcTable, aggJdbcErrorTable, aggJdbcPercentTable, jdbcUser, jdbcPassword) = args
+    val Array(filterDate, storagePath, jdbcUri, jdbcMetadataTable, aggJdbcbytesbyHour, aggJdbcquotalimit, jdbcUser, jdbcPassword) = args
     println(s"Running with: ${args.toSeq}")
 
-    val antennaDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
-    val metadataDF = readAntennaMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
-    val antennaMetadataDF = enrichDeviceWithMetadata(antennaDF, metadataDF).cache()
-    val aggByCoordinatesDF = totalBytesAntena(antennaMetadataDF)
-    val aggPercentStatusDF = totalBytestransByUsuario(antennaMetadataDF)
-    val aggErroAntennaDF = totalBytestransByApp(antennaMetadataDF)
+    val deviceDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
+    val metadataDF = readUserMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
+    val deviceMetadataDF = enrichDeviceWithMetadata(deviceDF, metadataDF).cache()
 
-    writeToJdbc(aggByCoordinatesDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
-    writeToJdbc(aggPercentStatusDF, jdbcUri, aggJdbcPercentTable, jdbcUser, jdbcPassword)
-    writeToJdbc(aggErroAntennaDF, jdbcUri, aggJdbcErrorTable, jdbcUser, jdbcPassword)
+    val aggtotalBytesAntenaDF = totalBytesAntena(deviceMetadataDF)
+    val aggtotalBytestransByUsuarioDF = totalBytestransByUsuario(deviceMetadataDF)
+    val aggtotalBytestransByApDF = totalBytestransByApp(deviceMetadataDF)
+    val aggquotapassDF= quotapass(deviceMetadataDF)
 
-    writeToStorage(antennaDF, storagePath)
 
+        writeToJdbc(aggtotalBytesAntenaDF , jdbcUri, aggJdbcbytesbyHour,jdbcUser, jdbcPassword)
+        writeToJdbc(aggtotalBytestransByUsuarioDF , jdbcUri, aggJdbcbytesbyHour, jdbcUser, jdbcPassword)
+        writeToJdbc(aggtotalBytestransByApDF, jdbcUri, aggJdbcbytesbyHour, jdbcUser, jdbcPassword)
+        writeToJdbc(aggquotapassDF, jdbcUri, aggJdbcquotalimit, jdbcUser, jdbcPassword)
     spark.close()
   }
 

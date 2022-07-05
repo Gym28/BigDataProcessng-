@@ -38,8 +38,8 @@ object StreamJobImpl extends StreamingJob {
       StructField ("antenna_id", StringType, nullable = false),
       StructField ("bytes",LongType, nullable=false),
       StructField ("app", StringType, nullable=false),
-      //StructField ("metric", StringType, nullable = false),
-     // StructField("value", IntegerType, nullable = false)
+      StructField ("metric", StringType, nullable = false),
+      StructField("value", IntegerType, nullable = false)
 
     ))
 // parseamos a string la columna value para que los datos aparezcan en string y
@@ -149,7 +149,7 @@ object StreamJobImpl extends StreamingJob {
       .format("parquet")
       //donde voy a escribir
       .option("path", storageRootPath)
-      .option("checkpointLocation", "/tmp/spark-checkPoint5")
+      .option("checkpointLocation", "/tmp/spark-checkPoint")
       //hacemos un start
       .start()
       .awaitTermination()
@@ -187,7 +187,7 @@ object StreamJobImpl extends StreamingJob {
       )
     ),s"jdbc:postgresql://localhost:5432/postgres","bytes", "postgres","mysecretpassword")
 
-    val future4 =writeToStorage(parserJsonData(readFromKafka("192.168.18.123:9092", "devices")), "/tmp/spark-data")
+    val future4 =writeToStorage(parserJsonData(readFromKafka("192.168.18.123:9092", "devices")), "/tmp/spark-deviceH")
     //debemos hacer el Await para lanzar los futuros,
     // hacemos una secuencia de futuros
     Await.result(Future.sequence(Seq(future1, future2, future3, future4)), Duration.Inf)
