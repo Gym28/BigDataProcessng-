@@ -17,12 +17,20 @@ En esta capa ya no se consumen los datos en streaming, aquí se leen datos  del 
 
 # Total de bytes recibidos por antena por hora.
 el window usado para la agrupación se fija en una hora y se elimina el witWatermark porque ya no es necesaria, de igual forma con la agregación se hace la suma y se adiciona la columna valor 
+![imagen](https://user-images.githubusercontent.com/86910759/177346625-dca65dbe-462a-4048-92f6-923a86b06dbd.png)
+
 
 # Total de bytes transmitidos por mail de usuario.
 Se hace la agrupación por mail del usuario y se guarda la infomación en la tabla correspondiente 
+![imagen](https://user-images.githubusercontent.com/86910759/177346808-13228e5c-4378-42dd-b9e5-c1d67c9047fb.png)
+
 
 # Total de bytes transmitidos por aplicación.
 Aquí se hace la agrupación por aplicación.
+
+# PassLimit
+![imagen](https://user-images.githubusercontent.com/86910759/177347061-fa3a09af-db2c-4b7e-ba97-2e7250725745.png)
+
 
 finalmente se seleccionan las columnas que irán en la tabla bytes_by_hour
 
